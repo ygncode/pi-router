@@ -103,6 +103,29 @@ pi -e ./src/index.ts
 
 For an ongoing local installation, run `pi install /absolute/path/to/pi-router`. Use `/reload` after editing the extension.
 
+### Maintainer release
+
+Git tags matching `v*` trigger `.github/workflows/release.yml`. The workflow validates the package, publishes the matching version to npm with provenance, and creates a GitHub release.
+
+Configure an npm automation or granular access token once:
+
+```bash
+gh secret set NPM_TOKEN --repo ygncode/pi-router
+```
+
+For each release, update and commit the version first, then push the matching tag:
+
+```bash
+npm version 0.1.0 --no-git-tag-version
+npm install --package-lock-only
+# review, test, commit, and push the version change
+
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow refuses to publish when the tag and `package.json` versions differ. Prerelease versions such as `0.2.0-beta.1` publish under the corresponding npm dist-tag (`beta` in this example).
+
 ## Commands
 
 ```text
