@@ -55,18 +55,18 @@ The classifier is instructed to interpret the routes as follows:
 - **frontier:** strongest configured target for difficult or high-value work
 - **efficient:** strong lower-cost/large-context alternative, not a presumed domain specialist
 
-## Benchmark basis and limitations
+## Inspiration and evaluation status
 
-As of August 1, 2026, the official [SWE-bench leaderboards](https://www.swebench.com/) do **not** contain the exact GPT-5.6 Sol/Terra/Luna or DeepSeek V4 Pro models, so the router does not claim direct benchmark evidence for their relative performance.
+**This extension has not been benchmarked.** We have not run a controlled evaluation showing that its routing decisions improve quality, cost, latency, or task-completion rates over using one model. The default routes are opinionated starting points, not an empirical ranking of the configured models.
 
-The closest comparable same-harness predecessor entries currently shown are:
+The project is inspired by broader work on combining and orchestrating multiple models:
 
-| mini-SWE-agent harness | GPT-5.2 Codex | DeepSeek V3.2 | Reported cost |
-|---|---:|---:|---:|
-| SWE-bench Verified | 72.8% | 70.0% (high reasoning) | approximately equal ($224.71 vs $223.92 total) |
-| SWE-bench Multilingual | 66.3% | 59.0% | DeepSeek lower ($115.15 vs $198.65 total) |
+- [OpenRouter Fusion](https://openrouter.ai/blog/announcements/fusion-beats-frontier/) sends a task to a panel of models and synthesizes their outputs with a judge. OpenRouter reports gains on its 100-task DRACO deep-research evaluation.
+- [Sakana Fugu](https://sakana.ai/fugu/) dynamically assembles and coordinates agents from a model pool, with learned multi-agent orchestration across complex tasks.
 
-These results are weak family-level priors, not measurements of the configured models. They support treating Codex as the maximum-quality default and DeepSeek as a potentially cost-efficient alternative; they do not support calling DeepSeek a security, terminal, or algorithm specialist. Results depend on the agent scaffold, reasoning setting, limits, and model version.
+Pi Model Router is much simpler than either system: one classifier chooses one configured model before an agent run. It does not execute models in parallel, synthesize multiple answers, assign agents roles, or use a learned orchestration policy. Results reported for Fusion or Fugu therefore do **not** validate this extension or its default model assignments.
+
+Treat the defaults as hypotheses. Before relying on the router for production work, evaluate it on representative tasks and compare correctness, completion rate, latency, model-switch frequency, cache impact, and total classifier-plus-agent cost against fixed-model baselines.
 
 ## Policies
 

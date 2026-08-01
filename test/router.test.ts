@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CONFIG, mergeConfig } from "../src/config.js";
-import { buildClassifierPrompt, parseClassifierDecision } from "../src/router.js";
+import { buildClassifierPrompt, CLASSIFIER_SYSTEM_PROMPT, parseClassifierDecision } from "../src/router.js";
 
 describe("parseClassifierDecision", () => {
 	it("parses a valid classifier response", () => {
@@ -37,6 +37,12 @@ describe("parseClassifierDecision", () => {
 });
 
 describe("buildClassifierPrompt", () => {
+	it("does not present unrun benchmarks as routing evidence", () => {
+		expect(CLASSIFIER_SYSTEM_PROMPT).toContain("have not been benchmarked");
+		expect(CLASSIFIER_SYSTEM_PROMPT).not.toContain("SWE-bench");
+		expect(CLASSIFIER_SYSTEM_PROMPT).not.toContain("72.8%");
+	});
+
 	it("includes policy, targets, context, and current request", () => {
 		const prompt = buildClassifierPrompt({
 			prompt: "Investigate the failure",

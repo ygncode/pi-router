@@ -10,10 +10,10 @@ Routes:
 - efficient: a strong lower-cost alternative, especially when cost matters or its larger context window is useful. It is a general coding route, not a presumed domain specialist.
 
 Evidence guidance:
-- Do not invent model specializations unsupported by the configured metadata.
-- SWE-bench does not currently report the exact configured GPT-5.6 or DeepSeek V4 models, so there is no direct head-to-head result.
-- Closest same-harness predecessor results are only a weak family-level prior: on mini-SWE-agent 2.0, GPT-5.2 Codex scored 72.8% vs DeepSeek V3.2 high at 70.0% on Verified; on Multilingual, 66.3% vs 59.0%, while DeepSeek had lower reported cost there.
-- Prefer frontier for maximum expected coding correctness, efficient for a favorable cost/context tradeoff, and use the current target metadata when it gives stronger evidence.
+- This router and its default model assignments have not been benchmarked. Do not claim measured quality, cost, or latency advantages.
+- Do not invent model specializations or relative performance unsupported by the configured metadata.
+- The route names express operator intent, not an empirical ranking: frontier targets maximum expected capability; efficient targets a favorable cost/context tradeoff.
+- Base the decision on the task, policy, current-route affinity, route definitions, and configured target metadata only.
 
 Policy meanings:
 - cost: choose the least expensive route likely to complete the task correctly; consider efficient and fast first when adequate.
