@@ -1,0 +1,56 @@
+{
+  "name": "@ygncode/pi-model-router",
+  "version": "0.1.0",
+  "description": "A configurable, cache-aware model router extension for pi",
+  "type": "module",
+  "license": "MIT",
+  "author": "ygncode",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ygncode/pi-router.git"
+  },
+  "homepage": "https://github.com/ygncode/pi-router#readme",
+  "bugs": {
+    "url": "https://github.com/ygncode/pi-router/issues"
+  },
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "model-router",
+    "llm-router"
+  ],
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE",
+    "router.example.json"
+  ],
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepack": "npm run check && npm test"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.83.0",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "packageManager": "npm@10.9.8",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

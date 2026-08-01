@@ -1,0 +1,40 @@
+{
+  "enabled": true,
+  "mode": "balance",
+  "notify": true,
+  "logDecisions": true,
+  "classifier": {
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "thinkingLevel": "low"
+  },
+  "classifierMaxTokens": 256,
+  "classifierTimeoutMs": 15000,
+  "contextMessages": 6,
+  "maxContextChars": 6000,
+  "maxPromptChars": 50000,
+  "minSwitchConfidence": 0.7,
+  "fallbackRoute": "balanced",
+  "models": {
+    "fast": {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
+      "thinkingLevel": "low"
+    },
+    "balanced": {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-terra",
+      "thinkingLevel": "medium"
+    },
+    "frontier": {
+      "provider": "openai-codex",
+      "model": "gpt-5.6-sol",
+      "thinkingLevel": "high"
+    },
+    "efficient": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-pro",
+      "thinkingLevel": "high"
+    }
+  }
+}
