@@ -35,12 +35,12 @@ export const DEFAULT_CONFIG: RouterConfig = {
 		fast: {
 			provider: "openai-codex",
 			model: "gpt-5.6-luna",
-			thinkingLevel: "low",
+			thinkingLevel: "max",
 		},
 		balanced: {
 			provider: "openai-codex",
 			model: "gpt-5.6-terra",
-			thinkingLevel: "medium",
+			thinkingLevel: "max",
 		},
 		frontier: {
 			provider: "openai-codex",
@@ -48,8 +48,8 @@ export const DEFAULT_CONFIG: RouterConfig = {
 			thinkingLevel: "high",
 		},
 		efficient: {
-			provider: "deepseek",
-			model: "deepseek-v4-pro",
+			provider: "openai-codex",
+			model: "gpt-5.6-luna",
 			thinkingLevel: "high",
 		},
 	},

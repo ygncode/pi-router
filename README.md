@@ -21,7 +21,7 @@ It returns strict JSON:
 ```json
 {
   "route": "frontier",
-  "ranking": ["frontier", "balanced", "efficient", "fast"],
+  "ranking": ["frontier", "balanced", "fast", "efficient"],
   "confidence": 0.86,
   "reason": "Ambiguous cross-system debugging task"
 }
@@ -39,22 +39,16 @@ The router then:
 
 This adds one small model request before each unpinned agent run. Pinning a route with `/router use ...` bypasses the classifier call.
 
-## Default models
+## Default routes
 
-| Purpose | Default model | Thinking |
-|---|---|---:|
-| Classifier | `deepseek/deepseek-v4-flash` | low |
-| `fast` | `openai-codex/gpt-5.6-luna` | low |
-| `balanced` | `openai-codex/gpt-5.6-terra` | medium |
-| `frontier` | `openai-codex/gpt-5.6-sol` | high |
-| `efficient` | `deepseek/deepseek-v4-pro` | high |
+| Route | Model | Thinking | Best for |
+|---|---|---:|---|
+| `efficient` | `openai-codex/gpt-5.6-luna` | high | Cheap and decent quality: docs, simple fixes, boilerplate, and low-stakes tasks |
+| `fast` | `openai-codex/gpt-5.6-luna` | max | Best cost/performance for most day-to-day coding |
+| `balanced` | `openai-codex/gpt-5.6-terra` | max | Complex, multi-file, or higher-risk work |
+| `frontier` | `openai-codex/gpt-5.6-sol` | high | Architecture, hard reasoning, and orchestration |
 
-The classifier is instructed to interpret the routes as follows:
-
-- **fast:** quickest configured target for clear, narrow, mechanical work
-- **balanced:** default target for normal implementation, debugging, testing, and review
-- **frontier:** strongest configured target for difficult or high-value work
-- **efficient:** strong lower-cost/large-context alternative, not a presumed domain specialist
+The classifier remains `deepseek/deepseek-v4-flash` at low thinking. The route descriptions are operator guidance, not benchmark results.
 
 ## Inspiration and evaluation status
 
@@ -182,12 +176,12 @@ Project settings override global settings and are read only for trusted projects
     "fast": {
       "provider": "openai-codex",
       "model": "gpt-5.6-luna",
-      "thinkingLevel": "low"
+      "thinkingLevel": "max"
     },
     "balanced": {
       "provider": "openai-codex",
       "model": "gpt-5.6-terra",
-      "thinkingLevel": "medium"
+      "thinkingLevel": "max"
     },
     "frontier": {
       "provider": "openai-codex",
@@ -195,8 +189,8 @@ Project settings override global settings and are read only for trusted projects
       "thinkingLevel": "high"
     },
     "efficient": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-pro",
+      "provider": "openai-codex",
+      "model": "gpt-5.6-luna",
       "thinkingLevel": "high"
     }
   }
@@ -206,6 +200,8 @@ Project settings override global settings and are read only for trusted projects
 Models must already exist in Pi's model registry and have authentication configured. The router never stores API keys. Configure providers in `~/.pi/agent/models.json` and authentication through `/login` as usual.
 
 Configuration is strict: unknown settings, invalid types, and out-of-range numbers disable the router instead of silently using defaults. Fix the file and run `/router reload`. Set a route target's `thinkingLevel` to `null` to retain Pi's current session thinking level when that route is selected. For the classifier, `null` disables explicit reasoning.
+
+The default route assignments are efficient=Luna High, fast=Luna Max, balanced=Terra Max, and frontier=Sol High. The default fallback is `balanced`.
 
 ## Privacy and accounting
 

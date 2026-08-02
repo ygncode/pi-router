@@ -69,7 +69,26 @@ describe("router config", () => {
 		});
 		expect(config.classifier).toEqual({ provider: "custom", model: "cheap-model", thinkingLevel: "off" });
 		expect(config.minSwitchConfidence).toBe(0.8);
-		expect(config.models.fast.model).toBe("gpt-5.6-luna");
+		expect(config.models.efficient).toEqual({
+			provider: "openai-codex",
+			model: "gpt-5.6-luna",
+			thinkingLevel: "high",
+		});
+		expect(config.models.fast).toEqual({
+			provider: "openai-codex",
+			model: "gpt-5.6-luna",
+			thinkingLevel: "max",
+		});
+		expect(config.models.balanced).toEqual({
+			provider: "openai-codex",
+			model: "gpt-5.6-terra",
+			thinkingLevel: "max",
+		});
+		expect(config.models.frontier).toEqual({
+			provider: "openai-codex",
+			model: "gpt-5.6-sol",
+			thinkingLevel: "high",
+		});
 	});
 
 	it("rejects invalid and unknown settings instead of silently using defaults", () => {
