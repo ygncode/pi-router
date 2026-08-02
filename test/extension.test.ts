@@ -29,12 +29,13 @@ function createHarness(options?: {
 	cwd?: string;
 	trusted?: boolean;
 	classifierResponse?: string;
+	setModel?: (model: any) => Promise<boolean>;
 }) {
 	const events = new Map<string, Handler>();
 	let command: CommandHandler | undefined;
 	let thinkingLevel: ThinkingLevel = "medium";
 	const notifications: Array<{ message: string; level: string }> = [];
-	const setModel = vi.fn(async () => true);
+	const setModel = vi.fn(options?.setModel ?? (async () => true));
 	const setThinkingLevel = vi.fn((level: ThinkingLevel) => {
 		thinkingLevel = level;
 	});
@@ -174,6 +175,52 @@ describe("model router extension", () => {
 				reason: expect.stringContaining("frontier was unavailable"),
 				provider: "openai-codex",
 				model: "gpt-5.6-luna",
+			}),
+		);
+	});
+
+	it("tries the next ranked model when switching throws", async () => {
+		const harness = createHarness({
+			setModel: async (selected) => {
+				if (selected === models.frontier) throw new Error("credential command failed");
+				return true;
+			},
+		});
+		await harness.command("use frontier", harness.ctx);
+		await harness.events.get("before_agent_start")?.({ prompt: "hard task" }, harness.ctx);
+
+		expect(harness.setModel.mock.calls.map(([selected]) => selected)).toEqual([models.frontier, models.fast]);
+		expect(harness.appendEntry).toHaveBeenCalledWith(
+			"pi-router-decision",
+			expect.objectContaining({
+				route: "fast",
+				recommendedRoute: "frontier",
+				reason: expect.stringContaining("frontier: model switch failed: credential command failed"),
+			}),
+		);
+	});
+
+	it("preserves the classifier recommendation when confidence keeps the current route", async () => {
+		const classifierRanking = ["frontier", "balanced", "efficient", "fast"];
+		const harness = createHarness({
+			classifierResponse: JSON.stringify({
+				route: "frontier",
+				ranking: classifierRanking,
+				confidence: 0.4,
+				reason: "Potentially difficult task",
+			}),
+		});
+		await harness.events.get("before_agent_start")?.({ prompt: "investigate this" }, harness.ctx);
+
+		expect(harness.setModel).not.toHaveBeenCalled();
+		expect(harness.appendEntry).toHaveBeenCalledWith(
+			"pi-router-decision",
+			expect.objectContaining({
+				route: "balanced",
+				recommendedRoute: "frontier",
+				ranking: classifierRanking,
+				classifierReason: "Potentially difficult task",
+				reason: expect.stringContaining("Kept current route"),
 			}),
 		);
 	});

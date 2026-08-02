@@ -78,7 +78,7 @@ describe("router config", () => {
 		expect(() => mergeConfig(DEFAULT_CONFIG, { contextMessages: 1.5 })).toThrow("must be an integer");
 	});
 
-	it("allows null to request the provider's default thinking level", () => {
+	it("allows null to retain the current session thinking level", () => {
 		const config = mergeConfig(DEFAULT_CONFIG, {
 			models: { fast: { thinkingLevel: null } },
 		});

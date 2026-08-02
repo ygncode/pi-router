@@ -27,7 +27,7 @@ ranking must contain every route exactly once. confidence is confidence that the
 
 function targetLabel(input: ClassifierInput, route: RouteName): string {
 	const target = input.models[route];
-	return `${route}: ${target.provider}/${target.model} (thinking: ${target.thinkingLevel ?? "provider default"})`;
+	return `${route}: ${target.provider}/${target.model} (thinking: ${target.thinkingLevel ?? "current session level"})`;
 }
 
 export function buildClassifierPrompt(input: ClassifierInput): string {

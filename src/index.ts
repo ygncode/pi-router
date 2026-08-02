@@ -122,10 +122,10 @@ export default function modelRouterExtension(pi: ExtensionAPI) {
 		const lines = [
 			`Pi Router: ${config.enabled ? "on" : "off"}`,
 			`Policy: ${config.mode}${pinnedRoute ? ` (pinned to ${pinnedRoute})` : ""}`,
-			`Classifier: ${modelKey(config.classifier.provider, config.classifier.model)} @ ${config.classifier.thinkingLevel ?? "default"}`,
+			`Classifier: ${modelKey(config.classifier.provider, config.classifier.model)} @ ${config.classifier.thinkingLevel ?? "off"}`,
 			...ROUTE_NAMES.map((route) => {
 				const target = config.models[route];
-				return `${route}: ${modelKey(target.provider, target.model)} @ ${target.thinkingLevel ?? "default"}`;
+				return `${route}: ${modelKey(target.provider, target.model)} @ ${target.thinkingLevel ?? "current"}`;
 			}),
 		];
 		const paths = getConfigPaths(ctx.cwd);
@@ -263,18 +263,28 @@ export default function modelRouterExtension(pi: ExtensionAPI) {
 				decision = classified.decision;
 				classifierUsage = classified.usage;
 				classifierName = classified.classifier;
-				const activeRoute = currentRoute(config, ctx);
-				if (activeRoute && decision.route !== activeRoute && decision.confidence < config.minSwitchConfidence) {
-					decision.ranking = [activeRoute, ...decision.ranking.filter((route) => route !== activeRoute)];
-					decision.route = activeRoute;
-					decision.reason = `Kept current route at ${(decision.confidence * 100).toFixed(0)}% classifier confidence; ${decision.reason}`;
-				}
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
 				const route = currentRoute(config, ctx) ?? config.fallbackRoute;
 				decision = fallbackDecision(route, `Classifier failed; using ${route}: ${message}`);
 				ctx.ui.notify(decision.reason, "warning");
 			}
+		}
+
+		const recommendedRoute = decision.route;
+		const classifierRanking = [...decision.ranking];
+		const classifierReason = decision.reason;
+		const activeRoute = currentRoute(config, ctx);
+		if (
+			!pinnedRoute &&
+			classifierName &&
+			activeRoute &&
+			decision.route !== activeRoute &&
+			decision.confidence < config.minSwitchConfidence
+		) {
+			decision.ranking = [activeRoute, ...decision.ranking.filter((route) => route !== activeRoute)];
+			decision.route = activeRoute;
+			decision.reason = `Kept current route at ${(decision.confidence * 100).toFixed(0)}% classifier confidence; ${classifierReason}`;
 		}
 
 		const failures: string[] = [];
@@ -307,9 +317,17 @@ export default function modelRouterExtension(pi: ExtensionAPI) {
 			}
 
 			const changed = !ctx.model || ctx.model.provider !== model.provider || ctx.model.id !== model.id;
-			if (changed && !(await pi.setModel(model))) {
-				failures.push(`${route}: authentication unavailable`);
-				continue;
+			if (changed) {
+				try {
+					if (!(await pi.setModel(model))) {
+						failures.push(`${route}: authentication unavailable`);
+						continue;
+					}
+				} catch (error) {
+					const message = error instanceof Error ? error.message : String(error);
+					failures.push(`${route}: model switch failed: ${message}`);
+					continue;
+				}
 			}
 			const thinkingLevel = scoped?.thinkingLevel ?? target.thinkingLevel;
 			if (thinkingLevel) pi.setThinkingLevel(thinkingLevel);
@@ -326,11 +344,11 @@ export default function modelRouterExtension(pi: ExtensionAPI) {
 					timestamp: Date.now(),
 					mode: config.mode,
 					route,
-					recommendedRoute: decision.route,
-					ranking: decision.ranking,
+					recommendedRoute,
+					ranking: classifierRanking,
 					confidence: decision.confidence,
 					reason: selectionReason,
-					classifierReason: decision.reason,
+					classifierReason,
 					provider: model.provider,
 					model: model.id,
 					thinkingLevel: pi.getThinkingLevel(),

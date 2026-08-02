@@ -34,7 +34,8 @@ The router then:
 3. Honors Pi's active model scope (`--models` or `enabledModels`) and any thinking level pinned by that scope.
 4. Skips unavailable models and models that cannot accept attached images.
 5. Switches with `pi.setModel()` and applies the scoped or route-configured thinking level.
-6. Falls back to the current route or `fallbackRoute` if classification fails.
+6. Continues through the ranked routes when a model switch or authentication resolution fails.
+7. Falls back to the current route or `fallbackRoute` if classification fails.
 
 This adds one small model request before each unpinned agent run. Pinning a route with `/router use ...` bypasses the classifier call.
 
@@ -204,7 +205,7 @@ Project settings override global settings and are read only for trusted projects
 
 Models must already exist in Pi's model registry and have authentication configured. The router never stores API keys. Configure providers in `~/.pi/agent/models.json` and authentication through `/login` as usual.
 
-Configuration is strict: unknown settings, invalid types, and out-of-range numbers disable the router instead of silently using defaults. Fix the file and run `/router reload`. Set a target's `thinkingLevel` to `null` to use the provider default.
+Configuration is strict: unknown settings, invalid types, and out-of-range numbers disable the router instead of silently using defaults. Fix the file and run `/router reload`. Set a route target's `thinkingLevel` to `null` to retain Pi's current session thinking level when that route is selected. For the classifier, `null` disables explicit reasoning.
 
 ## Privacy and accounting
 
