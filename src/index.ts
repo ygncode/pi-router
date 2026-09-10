@@ -1,5 +1,5 @@
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { cloneDefaultConfig, getConfigPaths, loadConfig, saveConfig } from "./config.js";
+import { cloneDefaultConfig, getConfigPaths, loadConfig, saveConfig, saveEnabled } from "./config.js";
 import { buildClassifierPrompt, CLASSIFIER_SYSTEM_PROMPT, parseClassifierDecision } from "./router.js";
 import {
 	ROUTER_MODES,
@@ -389,9 +389,26 @@ export default function modelRouterExtension(pi: ExtensionAPI) {
 				return;
 			}
 			if (action === "on" || action === "off") {
-				config.enabled = action === "on";
-				updateStatus(ctx);
-				ctx.ui.notify(`Router ${action}`, "info");
+				const enabled = action === "on";
+				const path = getConfigPaths(ctx.cwd).global;
+				try {
+					await saveEnabled(path, enabled);
+				} catch (error) {
+					ctx.ui.notify(
+						`Could not save router state: ${error instanceof Error ? error.message : String(error)}`,
+						"error",
+					);
+					return;
+				}
+				reloadConfig(ctx);
+				if (config.enabled === enabled) {
+					ctx.ui.notify(`Router ${action} (saved to ${path})`, "info");
+				} else {
+					ctx.ui.notify(
+						`Router state saved to ${path}, but the router is still ${config.enabled ? "on" : "off"}: a --router-* flag or a trusted project config overrides global settings`,
+						"warning",
+					);
+				}
 				return;
 			}
 			if (ROUTER_MODES.includes(action as RouterMode)) {

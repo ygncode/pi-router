@@ -249,13 +249,37 @@ export function loadConfig(cwd: string, allowProjectConfig: boolean): RouterConf
 	return config;
 }
 
-export async function saveConfig(path: string, config: RouterConfig): Promise<void> {
+async function writeJson(path: string, value: unknown): Promise<void> {
 	await mkdir(dirname(path), { recursive: true });
 	const temporaryPath = `${path}.${process.pid}.${randomUUID()}.tmp`;
 	try {
-		await writeFile(temporaryPath, `${JSON.stringify(config, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
+		await writeFile(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
 		await rename(temporaryPath, path);
 	} finally {
 		await rm(temporaryPath, { force: true });
 	}
+}
+
+export async function saveConfig(path: string, config: RouterConfig): Promise<void> {
+	await writeJson(path, config);
+}
+
+/**
+ * Persist only the `enabled` flag, preserving every other key in the file.
+ * An existing file that cannot be parsed is left untouched and reported as an error.
+ */
+export async function saveEnabled(path: string, enabled: boolean): Promise<void> {
+	let existing: Record<string, unknown> = {};
+	if (existsSync(path)) {
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(readFileSync(path, "utf8"));
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			throw new Error(`Could not update ${path}: ${message}`);
+		}
+		if (!isRecord(parsed)) throw new Error(`Could not update ${path}: top-level value must be an object`);
+		existing = parsed;
+	}
+	await writeJson(path, { ...existing, enabled });
 }

@@ -1,6 +1,6 @@
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import modelRouterExtension from "../src/index.js";
@@ -115,6 +115,22 @@ const temporaryDirectories: string[] = [];
 afterEach(async () => {
 	await Promise.all(temporaryDirectories.splice(0).map((path) => rm(path, { recursive: true, force: true })));
 });
+
+async function withTemporaryAgentDir(
+	run: (paths: { cwd: string; globalPath: string }) => Promise<void>,
+): Promise<void> {
+	const cwd = await mkdtemp(join(tmpdir(), "pi-router-test-"));
+	temporaryDirectories.push(cwd);
+	const previousAgentDir = process.env.PI_CODING_AGENT_DIR;
+	const agentDir = join(cwd, "agent-config");
+	process.env.PI_CODING_AGENT_DIR = agentDir;
+	try {
+		await run({ cwd, globalPath: join(agentDir, "router.json") });
+	} finally {
+		if (previousAgentDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
+		else process.env.PI_CODING_AGENT_DIR = previousAgentDir;
+	}
+}
 
 describe("model router extension", () => {
 	it("honors scoped models and their pinned thinking levels", async () => {
@@ -246,5 +262,80 @@ describe("model router extension", () => {
 			if (previousAgentDir === undefined) delete process.env.PI_CODING_AGENT_DIR;
 			else process.env.PI_CODING_AGENT_DIR = previousAgentDir;
 		}
+	});
+
+	it("persists /router off so the next session stays off", async () => {
+		await withTemporaryAgentDir(async ({ cwd, globalPath }) => {
+			const harness = createHarness({ cwd });
+			await harness.command("off", harness.ctx);
+
+			expect(JSON.parse(await readFile(globalPath, "utf8"))).toEqual({ enabled: false });
+			expect(harness.notifications).toContainEqual(
+				expect.objectContaining({
+					level: "info",
+					message: expect.stringContaining("Router off (saved to"),
+				}),
+			);
+
+			const next = createHarness({ cwd });
+			await next.events.get("session_start")?.({ reason: "startup" }, next.ctx);
+			await next.events.get("before_agent_start")?.({ prompt: "do not route" }, next.ctx);
+
+			expect(next.streamSimple).not.toHaveBeenCalled();
+			expect(next.setModel).not.toHaveBeenCalled();
+		});
+	});
+
+	it("preserves other settings when toggling and can re-enable routing", async () => {
+		await withTemporaryAgentDir(async ({ cwd, globalPath }) => {
+			await mkdir(dirname(globalPath), { recursive: true });
+			await writeFile(globalPath, '{"mode":"cost","enabled":true,"notify":false}\n');
+
+			const harness = createHarness({ cwd });
+			await harness.command("off", harness.ctx);
+			expect(JSON.parse(await readFile(globalPath, "utf8"))).toEqual({ mode: "cost", enabled: false, notify: false });
+
+			await harness.command("on", harness.ctx);
+			expect(JSON.parse(await readFile(globalPath, "utf8"))).toEqual({ mode: "cost", enabled: true, notify: false });
+
+			await harness.events.get("before_agent_start")?.({ prompt: "route this" }, harness.ctx);
+			expect(harness.streamSimple).toHaveBeenCalledOnce();
+		});
+	});
+
+	it("reports when a trusted project config keeps the router on", async () => {
+		await withTemporaryAgentDir(async ({ cwd, globalPath }) => {
+			await mkdir(join(cwd, ".pi"), { recursive: true });
+			await writeFile(join(cwd, ".pi", "router.json"), '{"enabled":true}\n');
+
+			const harness = createHarness({ cwd, trusted: true });
+			await harness.command("off", harness.ctx);
+
+			expect(JSON.parse(await readFile(globalPath, "utf8"))).toEqual({ enabled: false });
+			expect(harness.notifications).toContainEqual(
+				expect.objectContaining({
+					level: "warning",
+					message: expect.stringContaining("still on"),
+				}),
+			);
+		});
+	});
+
+	it("refuses to overwrite an unreadable global config", async () => {
+		await withTemporaryAgentDir(async ({ cwd, globalPath }) => {
+			await mkdir(dirname(globalPath), { recursive: true });
+			await writeFile(globalPath, "{not json");
+
+			const harness = createHarness({ cwd });
+			await harness.command("on", harness.ctx);
+
+			expect(await readFile(globalPath, "utf8")).toBe("{not json");
+			expect(harness.notifications).toContainEqual(
+				expect.objectContaining({
+					level: "error",
+					message: expect.stringContaining("Could not save router state"),
+				}),
+			);
+		});
 	});
 });

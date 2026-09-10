@@ -137,6 +137,8 @@ The workflow refuses to publish when the tag and `package.json` versions differ.
 /router off
 ```
 
+`/router on` and `/router off` persist the `enabled` flag to the global config file (`enabled` only; every other key in that file is preserved), so the choice survives new sessions and restarts. A `--router-*` flag or a trusted project config still overrides the global setting; Pi reports a warning when that happens.
+
 CLI flags:
 
 ```bash
@@ -153,6 +155,8 @@ Run `/router setup`, or create either:
 - Project: `.pi/router.json`
 
 Project settings override global settings and are read only for trusted projects. See [`router.example.json`](./router.example.json) for the complete configuration.
+
+Set `"enabled": false` to start with routing off; `/router on` turns it back on and persists that choice. This is the recommended setup when the classifier request before every agent run should be opt-in.
 
 ```json
 {
